@@ -16,6 +16,10 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
+@app.route("/")
+def home():
+    return jsonify({"message": "Welcome to HonourERD API!"})
+
 # ✅ Handle user login
 @app.route("/login", methods=["POST"])
 def login():
