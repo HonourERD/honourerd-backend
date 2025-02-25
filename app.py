@@ -25,6 +25,32 @@ def home():
 def login():
     data = request.get_json()
     user_identifier = data.get("user_identifier")
+    
+# ✅ Handle quiz score submission
+@app.route("/submit-score", methods=["POST"])
+def submit_score():
+    data = request.json
+    user_identifier = data.get("user_identifier")
+    score = data.get("score")
+    total_questions = data.get("total_questions")
+
+    if not user_identifier or score is None or total_questions is None:
+        return jsonify({"success": False, "message": "Missing data"}), 400
+
+    # ✅ Insert or update the user's score in the database
+    cur.execute(
+        """
+        INSERT INTO quiz_results (user_identifier, score, total_questions) 
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_identifier) 
+        DO UPDATE SET score = EXCLUDED.score;
+        """, 
+        (user_identifier, score, total_questions)
+    )
+    conn.commit()
+
+    return jsonify({"success": True, "message": "Score submitted successfully!"})
+
 
     # ✅ Check if the user already exists
     cur.execute("SELECT user_id FROM users WHERE user_identifier = %s", (user_identifier,))
