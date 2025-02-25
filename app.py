@@ -25,6 +25,22 @@ def home():
 def login():
     data = request.get_json()
     user_identifier = data.get("user_identifier")
+
+    if not user_identifier:
+        return jsonify({"success": False, "message": "No identifier provided"}), 400
+
+    # ✅ Check if user exists
+    cur.execute("SELECT user_id FROM users WHERE user_identifier = %s", (user_identifier,))
+    user = cur.fetchone()
+
+    if user:
+        return jsonify({"success": True, "message": "User found!"})
+    else:
+        # ✅ If the user doesn't exist, create them
+        cur.execute("INSERT INTO users (user_identifier) VALUES (%s) RETURNING user_id", (user_identifier,))
+        conn.commit()
+        return jsonify({"success": True, "message": "New user created!"})
+
     
 # ✅ Handle quiz score submission
 @app.route("/submit-score", methods=["POST"])
