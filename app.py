@@ -6,13 +6,13 @@ import os
 from dotenv import load_dotenv
 
 app = Flask(__name__)
-CORS(app)  # ✅ Allow frontend to talk to backend
+CORS(app)  # Allow frontend to talk to backend
 
-# ✅ Load database credentials
+# Load database credentials
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# ✅ Connect to PostgreSQL
+# Connect to PostgreSQL
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
@@ -20,7 +20,7 @@ cur = conn.cursor()
 def home():
     return jsonify({"message": "Welcome to HonourERD API!"})
 
-# ✅ Handle user login
+# Handle user login
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -29,20 +29,20 @@ def login():
     if not user_identifier:
         return jsonify({"success": False, "message": "No identifier provided"}), 400
 
-    # ✅ Check if user exists
+    # Check if user exists
     cur.execute("SELECT user_id FROM users WHERE user_identifier = %s", (user_identifier,))
     user = cur.fetchone()
 
     if user:
         return jsonify({"success": True, "message": "User found!"})
     else:
-        # ✅ If the user doesn't exist, create them
+        # If the user doesn't exist, create them
         cur.execute("INSERT INTO users (user_identifier) VALUES (%s) RETURNING user_id", (user_identifier,))
         conn.commit()
         return jsonify({"success": True, "message": "New user created!"})
 
     
-# ✅ Handle quiz score submission
+# Handle quiz score submission
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
     data = request.json
@@ -53,7 +53,7 @@ def submit_score():
     if not user_identifier or score is None or total_questions is None:
         return jsonify({"success": False, "message": "Missing data"}), 400
 
-    # ✅ Insert or update the user's score in the database
+    #  Insert or update the user's score in the database
     cur.execute(
         """
         INSERT INTO quiz_results (user_identifier, score, total_questions) 
@@ -68,14 +68,14 @@ def submit_score():
     return jsonify({"success": True, "message": "Score submitted successfully!"})
 
 
-    # ✅ Check if the user already exists
+    #  Check if the user already exists
     cur.execute("SELECT user_id FROM users WHERE user_identifier = %s", (user_identifier,))
     user = cur.fetchone()
 
     if user:
         return jsonify({"success": True, "message": "User found!"})
     else:
-        # ✅ If the user doesn't exist, create them
+    
         cur.execute("INSERT INTO users (user_identifier) VALUES (%s) RETURNING user_id", (user_identifier,))
         conn.commit()
         return jsonify({"success": True, "message": "New user created!"})
