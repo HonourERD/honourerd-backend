@@ -3,6 +3,7 @@ from flask_cors import CORS
 import psycopg2
 import os
 from dotenv import load_dotenv
+import json 
 
 app = Flask(__name__)
 CORS(app)  # Allow frontend to talk to backend
@@ -43,15 +44,19 @@ def login():
 
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
-    data = request.json
+    data = request.get_json(silent=True)  # ✅ Use `silent=True` to avoid errors
+    if not data:
+        return jsonify({"success": False, "message": "Invalid JSON format"}), 400
+
     user_identifier = data.get("user_identifier")
-    answers = data.get("answers")  # Example: {"1":1, "2":0, "3":1, ...}
+    answers = data.get("answers", {})  # ✅ Default to an empty dictionary
 
     if not user_identifier or not answers:
         return jsonify({"success": False, "message": "Missing data"}), 400
 
+
     try:
-        # ✅ Use the existing global `conn` and `cur`
+       
         cur = conn.cursor()
 
         # ✅ Dynamically create column names and values
