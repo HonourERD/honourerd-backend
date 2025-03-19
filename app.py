@@ -51,30 +51,36 @@ def submit_score():
         return jsonify({"success": False, "message": "Missing data"}), 400
 
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        # ✅ Use the existing global `conn` and `cur`
         cur = conn.cursor()
 
-        # ✅ Dynamically build query for inserting/updating results
+        # ✅ Dynamically create column names and values
         columns = ", ".join([f"q{q}" for q in answers.keys()])
-        values = ", ".join([str(answers[q]) for q in answers.keys()])
+        values = tuple(answers[q] for q in answers.keys())
+        placeholders = ", ".join(["%s"] * len(answers))  # Create a "%s, %s, ..." string
+
+        # ✅ Build UPDATE part of query
         updates = ", ".join([f"q{q} = EXCLUDED.q{q}" for q in answers.keys()])
 
         query = f"""
         INSERT INTO quiz_results (user_identifier, {columns}) 
-        VALUES (%s, {values})
+        VALUES (%s, {placeholders})
         ON CONFLICT (user_identifier) 
         DO UPDATE SET {updates};
         """
-        
-        cur.execute(query, (user_identifier,))
+
+        cur.execute(query, (user_identifier, *values))  # ✅ Pass parameters safely
         conn.commit()
-        cur.close()
-        conn.close()
 
         return jsonify({"success": True, "message": "Answers submitted successfully!"})
 
     except Exception as e:
+        conn.rollback()  # 🚨 Rollback if error occurs
         return jsonify({"success": False, "message": f"Database error: {str(e)}"})
+
+    finally:
+        cur.close()
+
 
 if __name__ == "__main__":
     app.run(debug=True)
