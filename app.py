@@ -44,6 +44,10 @@ def login():
 
 
 
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
+
+
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
     data = request.json
@@ -54,7 +58,7 @@ def submit_score():
         return jsonify({"success": False, "message": "Missing data"}), 400
 
     try:
-        conn = get_db_connection()  # ✅ Open a new connection
+        conn = get_db_connection()  # ✅ Now this function actually exists
         cur = conn.cursor()
 
         # ✅ Insert or Update the JSONB answers for the user
@@ -75,7 +79,6 @@ def submit_score():
 
     except Exception as e:
         return jsonify({"success": False, "message": f"Database error: {str(e)}"})
-
 
 if __name__ == "__main__":
     app.run(debug=True)
