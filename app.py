@@ -1,14 +1,11 @@
- 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 import os
 from dotenv import load_dotenv
-import json
-
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
+CORS(app)  # Allow frontend to talk to backend
 
 # Load database credentials
 load_dotenv()
@@ -44,36 +41,35 @@ def login():
 
 
 
-def get_db_connection():
-    return psycopg2.connect(DATABASE_URL)
-
-
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
     data = request.json
     user_identifier = data.get("user_identifier")
-    answers = json.dumps(data.get("answers"))  # Convert Python dict to JSON
+    answers = data.get("answers")  # Example: {"1":1, "2":0, "3":1, ...}
 
     if not user_identifier or not answers:
         return jsonify({"success": False, "message": "Missing data"}), 400
 
     try:
-        conn = get_db_connection()  # ✅ Now this function actually exists
+        conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
 
-        # ✅ Insert or Update the JSONB answers for the user
-        cur.execute(
-            """
-            INSERT INTO quiz_results (user_identifier, answers) 
-            VALUES (%s, %s)
-            ON CONFLICT (user_identifier) 
-            DO UPDATE SET answers = EXCLUDED.answers;
-            """, 
-            (user_identifier, answers)
-        )
+        # ✅ Dynamically build query for inserting/updating results
+        columns = ", ".join([f"q{q}" for q in answers.keys()])
+        values = ", ".join([str(answers[q]) for q in answers.keys()])
+        updates = ", ".join([f"q{q} = EXCLUDED.q{q}" for q in answers.keys()])
+
+        query = f"""
+        INSERT INTO quiz_results (user_identifier, {columns}) 
+        VALUES (%s, {values})
+        ON CONFLICT (user_identifier) 
+        DO UPDATE SET {updates};
+        """
+        
+        cur.execute(query, (user_identifier,))
         conn.commit()
         cur.close()
-        conn.close()  # ✅ Close the connection
+        conn.close()
 
         return jsonify({"success": True, "message": "Answers submitted successfully!"})
 
@@ -82,4 +78,3 @@ def submit_score():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
