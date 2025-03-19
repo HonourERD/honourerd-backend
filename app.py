@@ -4,6 +4,8 @@ from flask_cors import CORS
 import psycopg2
 import os
 from dotenv import load_dotenv
+import json
+
 
 app = Flask(__name__)
 CORS(app)  # Allow frontend to talk to backend
@@ -45,25 +47,33 @@ def login():
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
     data = request.json
+    print("📌 Received Data:", data)  # 🔍 Debugging output
+
     user_identifier = data.get("user_identifier")
-    answers = json.dumps(data.get("answers"))  # Convert Python dict to JSON
+    answers = json.dumps(data.get("answers"))  # Convert dict to JSON
 
     if not user_identifier or not answers:
+        print("🚨 ERROR: Missing user_identifier or answers!")
         return jsonify({"success": False, "message": "Missing data"}), 400
 
-    # ✅ Insert or Update the JSONB answers for the user
-    cur.execute(
-        """
-        INSERT INTO quiz_results (user_identifier, answers) 
-        VALUES (%s, %s)
-        ON CONFLICT (user_identifier) 
-        DO UPDATE SET answers = EXCLUDED.answers;
-        """, 
-        (user_identifier, answers)
-    )
-    conn.commit()
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO quiz_results (user_identifier, answers) 
+                    VALUES (%s, %s)
+                    ON CONFLICT (user_identifier) 
+                    DO UPDATE SET answers = EXCLUDED.answers;
+                """, (user_identifier, answers))
+
+        print("✅ Successfully inserted quiz results!")
+
+    except Exception as e:
+        print("❌ Database Error:", str(e))  # 🔍 Debugging output
+        return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
 
     return jsonify({"success": True, "message": "Answers submitted successfully!"})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
