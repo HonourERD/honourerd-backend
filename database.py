@@ -3,16 +3,16 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 
-# ✅ Load environment variables from .env
+# Load environment variables from .env
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# ✅ Connect to PostgreSQL
+#  Connect to PostgreSQL
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
-# ✅ Create Users Table (if not exists)
+#  Create Users Table (if not exists)
 cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
         user_id SERIAL PRIMARY KEY,
@@ -20,7 +20,7 @@ cur.execute("""
     );
 """)
 
-# ✅ Create Quiz Results Table (if not exists)
+#  Create Quiz Results Table (if not exists)
 cur.execute("""
     CREATE TABLE IF NOT EXISTS quiz_results (
         id  SERIAL PRIMARY KEY,
@@ -32,4 +32,4 @@ cur.execute("""
 """)
 
 conn.commit()
-print("✅ Database setup complete!")
+print("Database setup complete!")
