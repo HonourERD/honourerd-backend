@@ -8,7 +8,7 @@ import json
 
 
 app = Flask(__name__)
-CORS(app)  # Allow frontend to talk to backend
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
 
 # Load database credentials
 load_dotenv()
