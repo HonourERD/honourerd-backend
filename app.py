@@ -20,7 +20,8 @@ cur = conn.cursor()
 def home():
     return jsonify({"message": "Welcome to HonourERD API!"})
 
-# Handle user login
+
+# 🏆 Handle user login
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -29,56 +30,41 @@ def login():
     if not user_identifier:
         return jsonify({"success": False, "message": "No identifier provided"}), 400
 
-    # Check if user exists
     cur.execute("SELECT user_id FROM users WHERE user_identifier = %s", (user_identifier,))
     user = cur.fetchone()
 
     if user:
         return jsonify({"success": True, "message": "User found!"})
     else:
-        # If the user doesn't exist, create them
         cur.execute("INSERT INTO users (user_identifier) VALUES (%s) RETURNING user_id", (user_identifier,))
         conn.commit()
         return jsonify({"success": True, "message": "New user created!"})
 
-    
-# Handle quiz score submission
+
+
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
     data = request.json
     user_identifier = data.get("user_identifier")
-    score = data.get("score")
-    total_questions = data.get("total_questions")
+    answers = json.dumps(data.get("answers"))  # Convert Python dict to JSON
 
-    if not user_identifier or score is None or total_questions is None:
+    if not user_identifier or not answers:
         return jsonify({"success": False, "message": "Missing data"}), 400
 
-    #  Insert or update the user's score in the database
+    # ✅ Insert or Update the JSONB answers for the user
     cur.execute(
         """
-        INSERT INTO quiz_results (user_identifier, score, total_questions) 
-        VALUES (%s, %s, %s)
+        INSERT INTO quiz_results (user_identifier, answers) 
+        VALUES (%s, %s)
         ON CONFLICT (user_identifier) 
-        DO UPDATE SET score = EXCLUDED.score;
+        DO UPDATE SET answers = EXCLUDED.answers;
         """, 
-        (user_identifier, score, total_questions)
+        (user_identifier, answers)
     )
     conn.commit()
 
-    return jsonify({"success": True, "message": "Score submitted successfully!"})
-
-
-    #  Check if the user already exists
-    cur.execute("SELECT user_id FROM users WHERE user_identifier = %s", (user_identifier,))
-    user = cur.fetchone()
-
-    if user:
-        return jsonify({"success": True, "message": "User found!"})
-    else:
-    
-        cur.execute("INSERT INTO users (user_identifier) VALUES (%s) RETURNING user_id", (user_identifier,))
-        conn.commit()
-        return jsonify({"success": True, "message": "New user created!"})
+    return jsonify({"success": True, "message": "Answers submitted successfully!"})
 
 if __name__ == "__main__":
     app.run(debug=True)
+
