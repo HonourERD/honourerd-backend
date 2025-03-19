@@ -50,7 +50,7 @@ def submit_score():
     print("📌 Received Data:", data)  # 🔍 Debugging output
 
     user_identifier = data.get("user_identifier")
-    answers = json.dumps(data.get("answers"))  # Convert dict to JSON
+    answers = json.dumps(data.get("answers"))  
 
     if not user_identifier or not answers:
         print("🚨 ERROR: Missing user_identifier or answers!")
@@ -69,10 +69,11 @@ def submit_score():
         print("✅ Successfully inserted quiz results!")
 
     except Exception as e:
-        print("❌ Database Error:", str(e))  # 🔍 Debugging output
+        print("❌ Database Error:", str(e))  
         return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
 
     return jsonify({"success": True, "message": "Answers submitted successfully!"})
+
 
 
 if __name__ == "__main__":
