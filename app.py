@@ -3,16 +3,18 @@ from flask_cors import CORS
 import psycopg2
 import os
 from dotenv import load_dotenv
-import json 
 
+# Setup Flask app
 app = Flask(__name__)
-CORS(app)  # Allow frontend to talk to backend
 
-# Load database credentials
+# ✅ FIX: Allow CORS from GitHub Pages
+CORS(app, origins=["https://honourerd.github.io"])  # Replace with your GitHub Pages URL
+
+# Load environment variables
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Connect to PostgreSQL
+# Connect to the database
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
@@ -21,7 +23,7 @@ def home():
     return jsonify({"message": "Welcome to HonourERD API!"})
 
 
-# 🏆 Handle user login
+# ✅ Login Route
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -41,8 +43,8 @@ def login():
         return jsonify({"success": True, "message": "New user created!"})
 
 
-
-@app.route("/submit-score", methods=["POST"])
+# ✅ Submit Score Route
+@app.route("/submit_score", methods=["POST"])
 def submit_score():
     data = request.get_json(silent=True)
     print("📩 Incoming data:", data)
@@ -56,7 +58,7 @@ def submit_score():
     try:
         cur = conn.cursor()
 
-        # ✅ Shift keys: q0 ➜ q1, q1 ➜ q2, etc.
+        # Shift q0 → q1, q1 → q2...
         columns = ", ".join([f"q{int(q) + 1}" for q in answers.keys()])
         values = tuple(answers[q] for q in answers.keys())
         placeholders = ", ".join(["%s"] * len(answers))
@@ -82,7 +84,6 @@ def submit_score():
 
     finally:
         cur.close()
-
 
 
 if __name__ == "__main__":
