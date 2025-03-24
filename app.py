@@ -44,47 +44,45 @@ def login():
 
 @app.route("/submit-score", methods=["POST"])
 def submit_score():
-    data = request.get_json(silent=True)  # ✅ Use `silent=True` to avoid errors
-    if not data:
-        return jsonify({"success": False, "message": "Invalid JSON format"}), 400
+    data = request.get_json(silent=True)
+    print("📩 Incoming data:", data)
 
     user_identifier = data.get("user_identifier")
-    answers = data.get("answers", {})  # ✅ Default to an empty dictionary
+    answers = data.get("answers", {})
 
     if not user_identifier or not answers:
         return jsonify({"success": False, "message": "Missing data"}), 400
 
-
     try:
-       
         cur = conn.cursor()
 
-        # ✅ Dynamically create column names and values
-        columns = ", ".join([f"q{q}" for q in answers.keys()])
+        # ✅ Shift keys: q0 ➜ q1, q1 ➜ q2, etc.
+        columns = ", ".join([f"q{int(q) + 1}" for q in answers.keys()])
         values = tuple(answers[q] for q in answers.keys())
-        placeholders = ", ".join(["%s"] * len(answers))  # Create a "%s, %s, ..." string
-
-        # ✅ Build UPDATE part of query
-        updates = ", ".join([f"q{q} = EXCLUDED.q{q}" for q in answers.keys()])
+        placeholders = ", ".join(["%s"] * len(answers))
+        updates = ", ".join([f"q{int(q) + 1} = EXCLUDED.q{int(q) + 1}" for q in answers.keys()])
 
         query = f"""
-        INSERT INTO quiz_results (user_identifier, {columns}) 
+        INSERT INTO quiz_results (user_identifier, {columns})
         VALUES (%s, {placeholders})
-        ON CONFLICT (user_identifier) 
+        ON CONFLICT (user_identifier)
         DO UPDATE SET {updates};
         """
 
-        cur.execute(query, (user_identifier, *values))  # ✅ Pass parameters safely
+        cur.execute(query, (user_identifier, *values))
         conn.commit()
 
+        print("✅ Score submitted to DB!")
         return jsonify({"success": True, "message": "Answers submitted successfully!"})
 
     except Exception as e:
-        conn.rollback()  # 🚨 Rollback if error occurs
+        conn.rollback()
+        print("❌ DB Error:", e)
         return jsonify({"success": False, "message": f"Database error: {str(e)}"})
 
     finally:
         cur.close()
+
 
 
 if __name__ == "__main__":
