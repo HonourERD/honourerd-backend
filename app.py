@@ -7,14 +7,14 @@ from dotenv import load_dotenv
 # Setup Flask app
 app = Flask(__name__)
 
-# ✅ FIX: Allow CORS from GitHub Pages
-CORS(app, origins=["https://honourerd.github.io"])  # Replace with your GitHub Pages URL
+#allows CORS from pages
+CORS(app, origins=["https://honourerd.github.io"]) 
 
-# Load environment variables
+
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Connect to the database
+
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
@@ -23,7 +23,7 @@ def home():
     return jsonify({"message": "Welcome to HonourERD API!"})
 
 
-# ✅ Login Route
+
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -43,7 +43,7 @@ def login():
         return jsonify({"success": True, "message": "New user created!"})
 
 
-# ✅ Submit Score Route
+
 @app.route("/submit_score", methods=["POST"])
 def submit_score():
     data = request.get_json(silent=True)
@@ -58,7 +58,7 @@ def submit_score():
     try:
         cur = conn.cursor()
 
-        # Shift q0 → q1, q1 → q2...
+        # move aroud answers
         columns = ", ".join([f"q{int(q) + 1}" for q in answers.keys()])
         values = tuple(answers[q] for q in answers.keys())
         placeholders = ", ".join(["%s"] * len(answers))
@@ -74,12 +74,12 @@ def submit_score():
         cur.execute(query, (user_identifier, *values))
         conn.commit()
 
-        print("✅ Score submitted to DB!")
+        print("Score submitted to DB FINALLY!")
         return jsonify({"success": True, "message": "Answers submitted successfully!"})
 
     except Exception as e:
         conn.rollback()
-        print("❌ DB Error:", e)
+        print("DB Error:", e)
         return jsonify({"success": False, "message": f"Database error: {str(e)}"})
 
     finally:

@@ -3,7 +3,7 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# 🔹 Possible Attributes and Their Default Tables
+
 all_attributes = {
     "PATIENTID": "Patient",
     "PATIENTNAME": "Patient",
@@ -21,16 +21,16 @@ all_attributes = {
     "MEDICATION": "Medication"
 }
 
-# 🔹 Apply Normalization
+
 def normalize_data(student_input):
-    # 1️⃣  Convert student input into a structured DataFrame
+   
     normalized_data = []
     for attr in student_input:
         normalized_data.append((attr, all_attributes.get(attr, "Unknown")))
 
     df = pd.DataFrame(normalized_data, columns=["Attribute", "Belongs To"])
 
-    # 2️⃣  Apply 1NF (Fix Atomicity)
+  
     atomicity_fixes = {
         "PATIENTNAME": ["PATIENTFIRSTNAME", "PATIENTLASTNAME"],
         "DOCTORNAME": ["DOCTORFIRSTNAME", "DOCTORLASTNAME"]
@@ -46,7 +46,7 @@ def normalize_data(student_input):
 
     df = pd.DataFrame(expanded_data, columns=["Attribute", "Belongs To"])
 
-    # 3️⃣ Apply 2NF (Fix Partial Dependencies)
+   
     partial_dependencies = {
         "AGE": "PatientDetails",
         "DOB": "PatientDetails",
@@ -57,7 +57,7 @@ def normalize_data(student_input):
     df["Belongs To"] = df.apply(lambda row: partial_dependencies[row["Attribute"]]
                                 if row["Attribute"] in partial_dependencies else row["Belongs To"], axis=1)
 
-    # 4️⃣ Apply 3NF (Fix Transitive Dependencies)
+    
     transitive_dependencies = {
         "DOCTORSPECIALTY": "Doctor"
     }
@@ -65,12 +65,12 @@ def normalize_data(student_input):
     df["Belongs To"] = df.apply(lambda row: transitive_dependencies[row["Attribute"]]
                                 if row["Attribute"] in transitive_dependencies else row["Belongs To"], axis=1)
 
-    return df.to_dict(orient="records")  # Convert to JSON format
+    return df.to_dict(orient="records")  
 
-# 🔹 API Route to Accept Student Input & Return Normalized Data
+
 @app.route("/normalize", methods=["POST"])
 def normalize():
-    data = request.json  # Get input from frontend
+    data = request.json  
     student_input = data.get("attributes", [])
 
     if not student_input:
