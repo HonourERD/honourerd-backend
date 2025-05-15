@@ -4,10 +4,9 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 
-# Setup Flask app
 app = Flask(__name__)
 
-#allows CORS from pages
+
 CORS(app, origins=["https://honourerd.github.io"]) 
 
 
